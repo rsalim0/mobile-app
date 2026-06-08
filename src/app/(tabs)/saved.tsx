@@ -61,7 +61,7 @@ export default function SavedScreen() {
 const makeStyles = (WW: Palette) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: WW.bg },
-    content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
+    content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 110 },
     title: { fontSize: 40, fontFamily: Font.display, color: WW.text },
     subtitle: {
       fontSize: 16,

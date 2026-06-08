@@ -191,7 +191,7 @@ export default function SearchScreen() {
 const makeStyles = (WW: Palette) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: WW.bg },
-    content: { paddingHorizontal: 24, paddingBottom: 40, gap: 0 },
+    content: { paddingHorizontal: 24, paddingBottom: 110, gap: 0 },
     menuBtn: { paddingVertical: 12, marginBottom: 8, alignSelf: 'flex-start' },
     logo: {
       width: 52,
