@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AudioButton } from '@/components/word/audio-button';
 import { MeaningCard } from '@/components/word/meaning-card';
+import { SpeakButton } from '@/components/word/speak-button';
 import { StateView } from '@/components/state-view';
 import { Font, WW } from '@/constants/wordwise';
 import { useFavorites } from '@/context/favorites';
@@ -34,10 +35,9 @@ type Status =
   | { kind: 'success'; result: WordResult }
   | { kind: 'error'; errorKind: LookupErrorKind; message: string };
 
-/** Derive a human label (UK/US/AU…) from a Dictionary API audio filename. */
-function accentLabel(url: string, index: number): string {
-  const match = url.toLowerCase().match(/-([a-z]{2,3})\.mp3/);
-  const code = match?.[1];
+/** Derive a region label (UK/US/AU…) from a Dictionary API audio filename. */
+function accentOf(url: string): string | undefined {
+  const code = url.toLowerCase().match(/-([a-z]{2,3})\.mp3/)?.[1];
   const map: Record<string, string> = {
     uk: 'UK',
     us: 'US',
@@ -46,10 +46,10 @@ function accentLabel(url: string, index: number): string {
     in: 'IN',
     nz: 'NZ',
   };
-  return (code && map[code]) || `Audio ${index + 1}`;
+  return code ? map[code] : undefined;
 }
 
-/** This entry's IPA text, if any. */
+/** This entry's primary IPA text, if any. */
 function entryPhonetic(entry: DictionaryEntry): string | undefined {
   if (entry.phonetic) return entry.phonetic;
   for (const p of entry.phonetics ?? []) {
@@ -58,51 +58,71 @@ function entryPhonetic(entry: DictionaryEntry): string | undefined {
   return undefined;
 }
 
-/** Distinct, non-empty audio URLs for a single entry. */
-function entryAudioUrls(entry: DictionaryEntry): string[] {
-  const urls = new Set<string>();
-  for (const p of entry.phonetics ?? []) {
-    if (p.audio && p.audio.trim()) {
-      urls.add(p.audio.startsWith('//') ? `https:${p.audio}` : p.audio);
-    }
-  }
-  return [...urls];
+/** A single playable pronunciation: its own IPA text + audio + region. */
+interface PronVariant {
+  text?: string;
+  audio: string;
+  accent?: string;
 }
 
-/** A distinct pronunciation and every meaning that shares it. */
+/** Each audio-bearing pronunciation of an entry, with its own IPA + region.
+ *  This is what surfaces UK /ɹuːt/ vs US /ɹaʊt/ for "route". */
+function entryAudioVariants(entry: DictionaryEntry): PronVariant[] {
+  const out: PronVariant[] = [];
+  const seen = new Set<string>();
+  for (const p of entry.phonetics ?? []) {
+    if (!p.audio || !p.audio.trim()) continue;
+    const audio = p.audio.startsWith('//') ? `https:${p.audio}` : p.audio;
+    if (seen.has(audio)) continue;
+    seen.add(audio);
+    out.push({ text: p.text?.trim() || undefined, audio, accent: accentOf(audio) });
+  }
+  return out;
+}
+
+/** A distinct pronunciation group (one heteronym sense) and its meanings. */
 interface PronGroup {
-  phonetic?: string;
-  audioUrls: string[];
+  primaryText?: string;
+  variants: PronVariant[];
   meanings: Meaning[];
 }
 
 /**
- * Group the API's entries by pronunciation. Many words come back as several
- * entries that share the SAME phonetic (homonyms) — those merge into one
- * block. Only genuinely different pronunciations (heteronyms like "lead")
- * stay separate, so we never show a duplicated pronunciation.
+ * Group the API's entries by pronunciation. Entries that share the same
+ * primary phonetic (homonyms like "bank") merge into one block; heteronyms
+ * (different sounds, like "lead") stay separate. Within a block, every
+ * audio-bearing pronunciation is kept — so regional variants such as
+ * UK /ɹuːt/ and US /ɹaʊt/ for "route" each show their own IPA + speaker.
  */
 function groupByPronunciation(entries: DictionaryEntry[]): PronGroup[] {
-  const groups: PronGroup[] = [];
-  const byKey = new Map<string, PronGroup>();
+  const groups: (PronGroup & { audioKeys: Set<string> })[] = [];
+  const byKey = new Map<string, PronGroup & { audioKeys: Set<string> }>();
 
   for (const entry of entries) {
     const phon = entryPhonetic(entry);
     const key = (phon ?? '').trim().toLowerCase();
     let group = byKey.get(key);
     if (!group) {
-      group = { phonetic: phon, audioUrls: [], meanings: [] };
+      group = { primaryText: phon, variants: [], meanings: [], audioKeys: new Set() };
       byKey.set(key, group);
       groups.push(group);
-    } else if (!group.phonetic && phon) {
-      group.phonetic = phon;
+    } else if (!group.primaryText && phon) {
+      group.primaryText = phon;
     }
-    for (const url of entryAudioUrls(entry)) {
-      if (!group.audioUrls.includes(url)) group.audioUrls.push(url);
+    for (const v of entryAudioVariants(entry)) {
+      if (!group.audioKeys.has(v.audio)) {
+        group.audioKeys.add(v.audio);
+        group.variants.push(v);
+      }
     }
     group.meanings.push(...entry.meanings);
   }
-  return groups;
+
+  return groups.map((g) => ({
+    primaryText: g.primaryText,
+    variants: g.variants,
+    meanings: g.meanings,
+  }));
 }
 
 /** Collect up to 12 distinct synonyms across all meanings/definitions. */
@@ -129,7 +149,7 @@ function collectField(result: WordResult, field: 'synonyms' | 'antonyms'): strin
 /** A copy/share-friendly summary of the word. */
 function buildShareText(result: WordResult): string {
   const groups = groupByPronunciation(result.entries);
-  const phon = groups[0]?.phonetic;
+  const phon = groups[0]?.primaryText;
   const firstDef =
     result.entries[0]?.meanings[0]?.definitions[0]?.definition;
   const lines = [result.word + (phon ? `  ${phon}` : '')];
@@ -327,38 +347,48 @@ function LoadingState({ term }: { term: string }) {
   );
 }
 
-function PronunciationRow({ audioUrls }: { audioUrls: string[] }) {
-  // Multiple pronunciations (e.g. UK / US) — one labelled button each.
-  return (
-    <View style={styles.pronRow}>
-      {audioUrls.map((url, i) => (
-        <View key={url} style={styles.pronItem}>
-          <AudioButton url={url} />
-          <Text style={styles.pronLabel}>{accentLabel(url, i)}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-/** One distinct pronunciation and all the meanings that share it. */
+/** One distinct pronunciation group and all the meanings that share it.
+ *  - several audio variants → a stacked list, each with its own IPA + region
+ *    (UK /ɹuːt/ vs US /ɹaʊt/ for "route")
+ *  - one audio variant → inline phonetic + speaker
+ *  - no audio at all → phonetic + a text-to-speech speaker (e.g. "insane") */
 function PronGroupBlock({
   group,
+  word,
   showRule,
 }: {
   group: PronGroup;
+  word: string;
   showRule: boolean;
 }) {
-  const { phonetic, audioUrls, meanings } = group;
+  const { primaryText, variants, meanings } = group;
 
   return (
     <View style={[styles.entryBlock, showRule && styles.entryRule]}>
-      <View style={styles.phoneticRow}>
-        {phonetic ? <Text style={styles.phonetic}>{phonetic}</Text> : null}
-        {audioUrls.length === 1 ? <AudioButton url={audioUrls[0]} /> : null}
-      </View>
-
-      {audioUrls.length > 1 ? <PronunciationRow audioUrls={audioUrls} /> : null}
+      {variants.length === 0 ? (
+        // No recorded audio — show the IPA and offer device text-to-speech.
+        <View style={styles.phoneticRow}>
+          {primaryText ? <Text style={styles.phonetic}>{primaryText}</Text> : null}
+          <SpeakButton word={word} />
+        </View>
+      ) : variants.length === 1 ? (
+        <View style={styles.phoneticRow}>
+          {variants[0].text || primaryText ? (
+            <Text style={styles.phonetic}>{variants[0].text || primaryText}</Text>
+          ) : null}
+          <AudioButton url={variants[0].audio} />
+        </View>
+      ) : (
+        <View style={styles.variantList}>
+          {variants.map((v) => (
+            <View key={v.audio} style={styles.variantRow}>
+              <AudioButton url={v.audio} />
+              <Text style={styles.phonetic}>{v.text || primaryText || ''}</Text>
+              {v.accent ? <Text style={styles.pronLabel}>{v.accent}</Text> : null}
+            </View>
+          ))}
+        </View>
+      )}
 
       {meanings.map((meaning, mi) => (
         <MeaningCard key={mi} meaning={meaning} />
@@ -395,7 +425,7 @@ function SuccessState({ result }: { result: WordResult }) {
       <Text style={styles.word}>{result.word}</Text>
 
       {groups.map((group, gi) => (
-        <PronGroupBlock key={gi} group={group} showRule={gi > 0} />
+        <PronGroupBlock key={gi} group={group} word={result.word} showRule={gi > 0} />
       ))}
 
       <ChipSection label="SYNONYMS" words={collectSynonyms(result)} />
@@ -434,8 +464,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   phonetic: { fontSize: 22, fontFamily: Font.regular, color: WW.textSecondary },
-  pronRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 20, marginBottom: 8 },
-  pronItem: { alignItems: 'center', gap: 6 },
+  variantList: { gap: 16, marginBottom: 8 },
+  variantRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   pronLabel: {
     fontSize: 13,
     fontFamily: Font.semibold,
