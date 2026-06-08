@@ -121,8 +121,11 @@ export default function SearchScreen() {
           </Pressable>
         </View>
 
-        {/* While typing: live autocomplete. Otherwise: helper + recents + WOTD. */}
-        {typing ? (
+        {/* A validation error always wins; else autocomplete while typing;
+            else the helper + recents + Word of the Day. */}
+        {error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : typing ? (
           <SuggestionList
             suggestions={suggestions}
             query={query}
@@ -131,16 +134,12 @@ export default function SearchScreen() {
           />
         ) : (
           <>
-            {error ? (
-              <Text style={styles.error}>{error}</Text>
-            ) : (
-              <Text style={styles.helper}>
-                Try words like{' '}
-                <Text style={styles.helperBold}>eloquent</Text>,{' '}
-                <Text style={styles.helperBold}>serendipity</Text>, or{' '}
-                <Text style={styles.helperBold}>ephemeral</Text>.
-              </Text>
-            )}
+            <Text style={styles.helper}>
+              Try words like{' '}
+              <Text style={styles.helperBold}>eloquent</Text>,{' '}
+              <Text style={styles.helperBold}>serendipity</Text>, or{' '}
+              <Text style={styles.helperBold}>ephemeral</Text>.
+            </Text>
 
             {/* Surprise me — look up a random interesting word. */}
             <Pressable
