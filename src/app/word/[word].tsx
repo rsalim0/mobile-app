@@ -21,6 +21,7 @@ import {
   DictionaryEntry,
   LookupError,
   LookupErrorKind,
+  Meaning,
   WordResult,
 } from '@/types/dictionary';
 
@@ -62,6 +63,42 @@ function entryAudioUrls(entry: DictionaryEntry): string[] {
     }
   }
   return [...urls];
+}
+
+/** A distinct pronunciation and every meaning that shares it. */
+interface PronGroup {
+  phonetic?: string;
+  audioUrls: string[];
+  meanings: Meaning[];
+}
+
+/**
+ * Group the API's entries by pronunciation. Many words come back as several
+ * entries that share the SAME phonetic (homonyms) — those merge into one
+ * block. Only genuinely different pronunciations (heteronyms like "lead")
+ * stay separate, so we never show a duplicated pronunciation.
+ */
+function groupByPronunciation(entries: DictionaryEntry[]): PronGroup[] {
+  const groups: PronGroup[] = [];
+  const byKey = new Map<string, PronGroup>();
+
+  for (const entry of entries) {
+    const phon = entryPhonetic(entry);
+    const key = (phon ?? '').trim().toLowerCase();
+    let group = byKey.get(key);
+    if (!group) {
+      group = { phonetic: phon, audioUrls: [], meanings: [] };
+      byKey.set(key, group);
+      groups.push(group);
+    } else if (!group.phonetic && phon) {
+      group.phonetic = phon;
+    }
+    for (const url of entryAudioUrls(entry)) {
+      if (!group.audioUrls.includes(url)) group.audioUrls.push(url);
+    }
+    group.meanings.push(...entry.meanings);
+  }
+  return groups;
 }
 
 /** Collect up to 12 distinct synonyms across all meanings/definitions. */
@@ -195,30 +232,29 @@ function PronunciationRow({ audioUrls }: { audioUrls: string[] }) {
   );
 }
 
-/** One dictionary entry: its own phonetic + pronunciation(s) + meanings.
- *  Heteronyms (same spelling, different sound/sense — e.g. "lead", "bass")
- *  come back as separate entries, so each is rendered on its own. */
-function EntryBlock({
-  entry,
+/** One distinct pronunciation and all the meanings that share it. Heteronyms
+ *  (same spelling, different sound/sense — e.g. "lead", "bass") render as
+ *  separate groups; homonyms with the same sound are merged into one. */
+function PronGroupBlock({
+  group,
   showRule,
 }: {
-  entry: DictionaryEntry;
+  group: PronGroup;
   showRule: boolean;
 }) {
-  const phon = entryPhonetic(entry);
-  const audioUrls = entryAudioUrls(entry);
+  const { phonetic, audioUrls, meanings } = group;
 
   return (
     <View style={[styles.entryBlock, showRule && styles.entryRule]}>
       <View style={styles.phoneticRow}>
-        {phon ? <Text style={styles.phonetic}>{phon}</Text> : null}
+        {phonetic ? <Text style={styles.phonetic}>{phonetic}</Text> : null}
         {/* Activity 3 — a single pronunciation sits inline with the phonetic. */}
         {audioUrls.length === 1 ? <AudioButton url={audioUrls[0]} /> : null}
       </View>
 
       {audioUrls.length > 1 ? <PronunciationRow audioUrls={audioUrls} /> : null}
 
-      {entry.meanings.map((meaning, mi) => (
+      {meanings.map((meaning, mi) => (
         <MeaningCard key={mi} meaning={meaning} />
       ))}
     </View>
@@ -227,13 +263,14 @@ function EntryBlock({
 
 function SuccessState({ result }: { result: WordResult }) {
   const synonyms = collectSynonyms(result);
+  const groups = groupByPronunciation(result.entries);
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.word}>{result.word}</Text>
 
-      {result.entries.map((entry, ei) => (
-        <EntryBlock key={ei} entry={entry} showRule={ei > 0} />
+      {groups.map((group, gi) => (
+        <PronGroupBlock key={gi} group={group} showRule={gi > 0} />
       ))}
 
       {synonyms.length > 0 && (
