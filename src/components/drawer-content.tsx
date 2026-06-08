@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brand: { fontSize: 24, fontFamily: Font.extrabold, color: WW.text },
+  brand: { fontSize: 28, fontFamily: Font.display, color: WW.text },
   searchItem: {
     flexDirection: 'row',
     alignItems: 'center',

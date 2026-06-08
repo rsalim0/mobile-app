@@ -1,38 +1,41 @@
 /**
- * WordWise palette — mirrors the indigo Daisy design used for the mockups.
- * The Daisy designs are light-themed, so these are fixed light tokens.
+ * WordWise palette — a cozy book-novel / wood theme: aged parchment
+ * backgrounds, walnut-brown accents, espresso text. Mirrors the Daisy theme.
  */
 export const WW = {
-  primary: '#4f46e5',
-  primaryDark: '#4338ca',
-  onPrimary: '#ffffff',
+  primary: '#855a32', // walnut
+  primaryDark: '#5e3a1e',
+  onPrimary: '#fbf4e6', // cream
 
-  bg: '#ffffff',
-  card: '#f8fafc',
-  cardBorder: '#eef0f4',
+  bg: '#f6ecd9', // parchment
+  card: '#efe2cb', // soft tan paper
+  cardBorder: '#ddcaa9',
 
-  chip: '#eef2ff',
-  chipText: '#3730a3',
+  chip: '#e8d8bd', // tan
+  chipText: '#5a4023', // deep brown
 
-  text: '#0f172a',
-  textSecondary: '#64748b',
-  textMuted: '#94a3b8',
+  text: '#3a2c20', // espresso
+  textSecondary: '#8a755b',
+  textMuted: '#b3a489',
 
-  destructive: '#dc2626',
-  divider: '#eef0f4',
+  destructive: '#a23b2e', // brick red
+  divider: '#e3d6c0',
 } as const;
 
 /**
- * Plus Jakarta Sans weights (the font Daisy used). React Native picks a font
- * file by family name, not by `fontWeight`, so each weight is its own family.
- * Use these via `fontFamily` instead of `fontWeight`.
+ * Lora (a classic literary book serif) — the font Daisy uses for this theme.
+ * React Native picks a font file by family name, not by `fontWeight`, so each
+ * weight is its own family. Use these via `fontFamily` instead of `fontWeight`.
+ * Lora tops out at 700, so `extrabold` reuses the bold file.
  */
 export const Font = {
-  regular: 'PlusJakartaSans_400Regular',
-  medium: 'PlusJakartaSans_500Medium',
-  semibold: 'PlusJakartaSans_600SemiBold',
-  bold: 'PlusJakartaSans_700Bold',
-  extrabold: 'PlusJakartaSans_800ExtraBold',
+  regular: 'Lora_400Regular',
+  medium: 'Lora_500Medium',
+  semibold: 'Lora_600SemiBold',
+  bold: 'Lora_700Bold',
+  extrabold: 'Lora_700Bold',
+  /** Instrument Serif — an elegant display serif for large headings/titles. */
+  display: 'InstrumentSerif_400Regular',
 } as const;
 
 /** A few friendly suggestions for the empty search state. */

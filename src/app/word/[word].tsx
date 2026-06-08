@@ -17,12 +17,52 @@ import { StateView } from '@/components/state-view';
 import { Font, WW } from '@/constants/wordwise';
 import { useSearchHistory } from '@/context/search-history';
 import { lookupWord } from '@/services/dictionary';
-import { LookupError, LookupErrorKind, WordResult } from '@/types/dictionary';
+import {
+  DictionaryEntry,
+  LookupError,
+  LookupErrorKind,
+  WordResult,
+} from '@/types/dictionary';
 
 type Status =
   | { kind: 'loading' }
   | { kind: 'success'; result: WordResult }
   | { kind: 'error'; errorKind: LookupErrorKind; message: string };
+
+/** Derive a human label (UK/US/AU…) from a Dictionary API audio filename. */
+function accentLabel(url: string, index: number): string {
+  const match = url.toLowerCase().match(/-([a-z]{2,3})\.mp3/);
+  const code = match?.[1];
+  const map: Record<string, string> = {
+    uk: 'UK',
+    us: 'US',
+    au: 'AU',
+    ca: 'CA',
+    in: 'IN',
+    nz: 'NZ',
+  };
+  return (code && map[code]) || `Audio ${index + 1}`;
+}
+
+/** This entry's IPA text, if any. */
+function entryPhonetic(entry: DictionaryEntry): string | undefined {
+  if (entry.phonetic) return entry.phonetic;
+  for (const p of entry.phonetics ?? []) {
+    if (p.text && p.text.trim()) return p.text;
+  }
+  return undefined;
+}
+
+/** Distinct, non-empty audio URLs for a single entry. */
+function entryAudioUrls(entry: DictionaryEntry): string[] {
+  const urls = new Set<string>();
+  for (const p of entry.phonetics ?? []) {
+    if (p.audio && p.audio.trim()) {
+      urls.add(p.audio.startsWith('//') ? `https:${p.audio}` : p.audio);
+    }
+  }
+  return [...urls];
+}
 
 /** Collect up to 12 distinct synonyms across all meanings/definitions. */
 function collectSynonyms(result: WordResult): string[] {
@@ -141,27 +181,60 @@ function LoadingState({ term }: { term: string }) {
   );
 }
 
+function PronunciationRow({ audioUrls }: { audioUrls: string[] }) {
+  // Multiple pronunciations (e.g. UK / US) — one labelled button each.
+  return (
+    <View style={styles.pronRow}>
+      {audioUrls.map((url, i) => (
+        <View key={url} style={styles.pronItem}>
+          <AudioButton url={url} />
+          <Text style={styles.pronLabel}>{accentLabel(url, i)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** One dictionary entry: its own phonetic + pronunciation(s) + meanings.
+ *  Heteronyms (same spelling, different sound/sense — e.g. "lead", "bass")
+ *  come back as separate entries, so each is rendered on its own. */
+function EntryBlock({
+  entry,
+  showRule,
+}: {
+  entry: DictionaryEntry;
+  showRule: boolean;
+}) {
+  const phon = entryPhonetic(entry);
+  const audioUrls = entryAudioUrls(entry);
+
+  return (
+    <View style={[styles.entryBlock, showRule && styles.entryRule]}>
+      <View style={styles.phoneticRow}>
+        {phon ? <Text style={styles.phonetic}>{phon}</Text> : null}
+        {/* Activity 3 — a single pronunciation sits inline with the phonetic. */}
+        {audioUrls.length === 1 ? <AudioButton url={audioUrls[0]} /> : null}
+      </View>
+
+      {audioUrls.length > 1 ? <PronunciationRow audioUrls={audioUrls} /> : null}
+
+      {entry.meanings.map((meaning, mi) => (
+        <MeaningCard key={mi} meaning={meaning} />
+      ))}
+    </View>
+  );
+}
+
 function SuccessState({ result }: { result: WordResult }) {
-  const audioUrl = result.audioUrls[0];
   const synonyms = collectSynonyms(result);
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.word}>{result.word}</Text>
 
-      <View style={styles.phoneticRow}>
-        {result.phoneticText ? (
-          <Text style={styles.phonetic}>{result.phoneticText}</Text>
-        ) : null}
-        {/* Activity 3 — only show the speaker when audio exists. */}
-        {audioUrl ? <AudioButton url={audioUrl} /> : null}
-      </View>
-
-      {result.entries.flatMap((entry, ei) =>
-        entry.meanings.map((meaning, mi) => (
-          <MeaningCard key={`${ei}-${mi}`} meaning={meaning} />
-        )),
-      )}
+      {result.entries.map((entry, ei) => (
+        <EntryBlock key={ei} entry={entry} showRule={ei > 0} />
+      ))}
 
       {synonyms.length > 0 && (
         <View style={styles.synonyms}>
@@ -187,7 +260,14 @@ const styles = StyleSheet.create({
   backBtn: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, alignSelf: 'flex-start' },
 
   content: { paddingHorizontal: 24, paddingBottom: 48, gap: 16 },
-  word: { fontSize: 48, fontFamily: Font.extrabold, color: WW.text, marginTop: 4 },
+  word: { fontSize: 56, fontFamily: Font.display, color: WW.text, marginTop: 4 },
+  entryBlock: { gap: 16 },
+  entryRule: {
+    borderTopWidth: 1,
+    borderTopColor: WW.divider,
+    paddingTop: 24,
+    marginTop: 8,
+  },
   phoneticRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -195,6 +275,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   phonetic: { fontSize: 22, fontFamily: Font.regular, color: WW.textSecondary },
+  pronRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 20, marginBottom: 8 },
+  pronItem: { alignItems: 'center', gap: 6 },
+  pronLabel: {
+    fontSize: 13,
+    fontFamily: Font.semibold,
+    color: WW.textSecondary,
+    letterSpacing: 1,
+  },
 
   synonyms: { marginTop: 12, gap: 14 },
   synLabel: {

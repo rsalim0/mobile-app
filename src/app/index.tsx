@@ -17,6 +17,7 @@ import { SuggestionList } from '@/components/suggestion-list';
 import { Font, SUGGESTED_WORDS, WW } from '@/constants/wordwise';
 import { useSearchHistory } from '@/context/search-history';
 import { fetchSuggestions, warmUpSuggestions } from '@/services/suggestions';
+import { validateWord } from '@/utils/validate-word';
 
 // On web, kill the default blue focus outline — we show a focused border instead.
 // `outlineStyle` is a react-native-web style prop not in RN's TS types, hence the cast.
@@ -58,9 +59,10 @@ export default function SearchScreen() {
 
   function submit(word?: string) {
     const term = (word ?? query).trim();
-    // Activity 1.2 — validate that the search field is not empty.
-    if (!term) {
-      setError('Please enter a word to search.');
+    // Activity 1.2 — validate input (empty / sentence / numbers / symbols).
+    const validationError = validateWord(term);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setError(null);
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 42, fontFamily: Font.extrabold, color: WW.text, marginTop: 16 },
+  title: { fontSize: 48, fontFamily: Font.display, color: WW.text, marginTop: 16 },
   subtitle: { fontSize: 18, fontFamily: Font.regular, color: WW.textSecondary, marginTop: 4 },
   searchBar: {
     flexDirection: 'row',
@@ -244,11 +246,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   wotdLabel: {
-    color: '#c7d2fe',
+    color: '#dcc7a3',
     fontSize: 13,
     fontFamily: Font.bold,
     letterSpacing: 1,
   },
-  wotdWord: { color: WW.onPrimary, fontSize: 28, fontFamily: Font.extrabold },
-  wotdDef: { color: '#e0e7ff', fontSize: 16, fontFamily: Font.regular },
+  wotdWord: { color: WW.onPrimary, fontSize: 32, fontFamily: Font.display },
+  wotdDef: { color: '#f1e7d4', fontSize: 16, fontFamily: Font.regular },
 });

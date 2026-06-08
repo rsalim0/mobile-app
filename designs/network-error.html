@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=430, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>:root { --background: #ffffff; --foreground: #0f172a; --card: #f8fafc; --card-foreground: #0f172a; --popover: #ffffff; --popover-foreground: #0f172a; --primary: #4f46e5; --primary-foreground: #ffffff; --secondary: #eef2ff; --secondary-foreground: #3730a3; --muted: #f1f5f9; --muted-foreground: #64748b; --accent: #eef2ff; --accent-foreground: #3730a3; --destructive: #dc2626; --destructive-foreground: #ffffff; --border: #e2e8f0; --input: #f1f5f9; --ring: #4f46e5; --chart-1: #4f46e5; --chart-2: #eef2ff; --chart-3: #eef2ff; --chart-4: #64748b; --chart-5: #e2e8f0; --radius: 1rem; --font-body: Inter, system-ui, sans-serif; --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif; --shape: round; }</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>:root { --background: #f6ecd9; --foreground: #3a2c20; --card: #efe2cb; --card-foreground: #3a2c20; --popover: #f6ecd9; --popover-foreground: #3a2c20; --primary: #855a32; --primary-foreground: #fbf4e6; --secondary: #e8d8bd; --secondary-foreground: #5a4023; --muted: #ece0c9; --muted-foreground: #8a755b; --accent: #e8d8bd; --accent-foreground: #5a4023; --destructive: #a23b2e; --destructive-foreground: #fbf4e6; --border: #ddcaa9; --input: #ece0c9; --ring: #855a32; --chart-1: #855a32; --chart-2: #e8d8bd; --chart-3: #e8d8bd; --chart-4: #8a755b; --chart-5: #ddcaa9; --radius: 0.5rem; --font-body: Lora, ui-serif, Georgia, serif; --font-heading: Lora, ui-serif, Georgia, serif; --shape: round; }</style>
 <style type="text/tailwindcss">
 @theme inline {
   --color-background: var(--background);
@@ -206,7 +206,7 @@ iconify-icon:not([width]):not([height]) {
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer crossorigin></script>
 <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" defer crossorigin></script>
 </head>
-<body class="flex flex-col min-h-screen"><svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
+<body class="flex flex-col min-h-screen font-serif"><svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
 <defs>
 <filter id="liquid-glass-distortion" x="0%" y="0%" width="100%" height="100%">
 <feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves="2" seed="3" result="noise"/>
@@ -217,38 +217,38 @@ iconify-icon:not([width]):not([height]) {
 </svg>
 
   <!-- Header -->
-  <header class="h-14 flex items-center px-5 pt-2" data-aid="pr5ezv">
-    <button class="-ml-2 p-2 rounded-full flex items-center justify-center text-foreground" aria-label="Back" data-aid="dnha3a">
-      <iconify-icon icon="lucide:chevron-left" width="24" height="24" data-aid="4d6dfk"></iconify-icon>
+  <header class="h-14 flex items-center px-5 pt-2" data-aid="lvo3yc">
+    <button class="-ml-2 p-2 rounded-full flex items-center justify-center text-foreground" aria-label="Back" data-aid="fpadyd">
+      <iconify-icon icon="lucide:chevron-left" width="24" height="24" data-aid="lehfz6"></iconify-icon>
     </button>
   </header>
 
   <!-- Centered content -->
-  <main class="flex-1 flex flex-col items-center justify-center px-8 text-center -mt-8" data-aid="jmqiz2">
+  <main class="flex-1 flex flex-col items-center justify-center px-8 text-center -mt-8" data-aid="4knuam">
 
     <!-- Badge -->
-    <div class="relative mb-8" data-aid="uljc3x">
-      <div class="absolute inset-0 rounded-full bg-secondary/60 blur-2xl scale-125" data-aid="ouliac"></div>
-      <div class="relative size-20 rounded-full bg-secondary flex items-center justify-center" data-aid="3cjm4h">
-        <iconify-icon icon="lucide:wifi-off" width="36" height="36" class="text-muted-foreground" data-aid="mkkycl"></iconify-icon>
+    <div class="relative mb-8" data-aid="hz3kye">
+      <div class="absolute inset-0 rounded-full bg-secondary/60 blur-2xl scale-125" data-aid="2vh2od"></div>
+      <div class="relative size-20 rounded-full bg-secondary flex items-center justify-center" data-aid="ygu3ki">
+        <iconify-icon icon="lucide:wifi-off" width="36" height="36" class="text-secondary-foreground" data-aid="fiotra"></iconify-icon>
       </div>
     </div>
 
-    <h1 class="text-2xl font-heading font-bold text-foreground mb-3" data-aid="uggok4">No connection</h1>
+    <h1 class="text-2xl font-serif font-bold text-foreground mb-3" data-aid="6qagip">No connection</h1>
 
-    <p class="text-base text-muted-foreground leading-relaxed max-w-[19rem]" data-aid="izqmp4">
+    <p class="text-base text-muted-foreground leading-relaxed max-w-[19rem]" data-aid="sajllw">
       You appear to be offline. Check your internet connection and try again.
     </p>
 
   </main>
 
   <!-- Bottom action -->
-  <div class="px-5 pb-10 space-y-4" data-aid="7xtkph">
-    <button class="h-12 w-full rounded-full bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2" data-aid="jlh6si">
-      <iconify-icon icon="lucide:refresh-cw" width="20" height="20" data-aid="yvi355"></iconify-icon>
+  <div class="px-5 pb-10 space-y-4" data-aid="wcnvi6">
+    <button class="h-12 w-full rounded-full bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2" data-aid="xa737d">
+      <iconify-icon icon="lucide:refresh-cw" width="20" height="20" data-aid="nphxf6"></iconify-icon>
       Retry
     </button>
-    <p class="text-center text-xs text-muted-foreground px-6" data-aid="ws2dl7">
+    <p class="text-center text-xs text-muted-foreground px-6" data-aid="x7qgfz">
       WordWise needs a connection to look up words.
     </p>
   </div>

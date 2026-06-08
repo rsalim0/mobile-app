@@ -25,6 +25,8 @@ function splitPrefix(word: string, query: string): [string, string] {
 /**
  * Live autocomplete dropdown shown under the search bar (Daisy "Search
  * Autocomplete" screen). The first row is highlighted as the default choice.
+ * The row and the fill (↖) control are sibling Pressables — never nested, so
+ * react-native-web doesn't render a <button> inside a <button>.
  */
 export function SuggestionList({
   suggestions,
@@ -38,30 +40,32 @@ export function SuggestionList({
         const [matched, rest] = splitPrefix(word, query);
         const highlighted = i === 0;
         return (
-          <Pressable
+          <View
             key={word}
-            accessibilityRole="button"
-            accessibilityLabel={`Search ${word}`}
-            onPress={() => onSelect(word)}
-            style={({ pressed }) => [
+            style={[
               styles.row,
               highlighted ? styles.rowHighlighted : styles.rowDivider,
-              pressed && !highlighted && styles.rowPressed,
             ]}>
-            <Ionicons name="search" size={18} color={WW.textSecondary} />
-            <Text style={styles.word} numberOfLines={1}>
-              {matched ? <Text style={styles.matched}>{matched}</Text> : null}
-              <Text style={styles.rest}>{rest}</Text>
-            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Search ${word}`}
+              onPress={() => onSelect(word)}
+              style={({ pressed }) => [styles.main, pressed && styles.pressed]}>
+              <Ionicons name="search" size={18} color={WW.textSecondary} />
+              <Text style={styles.word} numberOfLines={1}>
+                {matched ? <Text style={styles.matched}>{matched}</Text> : null}
+                <Text style={styles.rest}>{rest}</Text>
+              </Text>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Use ${word}`}
               hitSlop={10}
               onPress={() => onFill(word)}
-              style={({ pressed }) => pressed && styles.fillPressed}>
+              style={({ pressed }) => [styles.fill, pressed && styles.pressed]}>
               <Feather name="arrow-up-left" size={18} color={WW.textSecondary} />
             </Pressable>
-          </Pressable>
+          </View>
         );
       })}
     </View>
@@ -73,16 +77,21 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
     paddingHorizontal: 16,
-    paddingVertical: 18,
     borderRadius: 14,
   },
   rowHighlighted: { backgroundColor: WW.chip },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: WW.divider, borderRadius: 0 },
-  rowPressed: { backgroundColor: WW.card },
+  main: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 18,
+  },
+  fill: { padding: 8 },
   word: { flex: 1, fontSize: 18 },
   matched: { fontFamily: Font.bold, color: WW.text },
   rest: { fontFamily: Font.medium, color: WW.textSecondary },
-  fillPressed: { opacity: 0.5 },
+  pressed: { opacity: 0.5 },
 });

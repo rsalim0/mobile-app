@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 26, fontFamily: Font.extrabold, color: WW.text, textAlign: 'center' },
+  title: { fontSize: 30, fontFamily: Font.display, color: WW.text, textAlign: 'center' },
   message: {
     fontSize: 16,
     lineHeight: 24,

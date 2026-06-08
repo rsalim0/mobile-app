@@ -1,11 +1,11 @@
+import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import {
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
+  Lora_400Regular,
+  Lora_500Medium,
+  Lora_600SemiBold,
+  Lora_700Bold,
   useFonts,
-} from '@expo-google-fonts/plus-jakarta-sans';
+} from '@expo-google-fonts/lora';
 import { Drawer } from 'expo-router/drawer';
 import type { DrawerContentComponentProps } from 'expo-router/build/react-navigation/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -16,11 +16,11 @@ import { WW } from '@/constants/wordwise';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+    Lora_400Regular,
+    Lora_500Medium,
+    Lora_600SemiBold,
+    Lora_700Bold,
+    InstrumentSerif_400Regular,
   });
 
   // Hold the (already-visible) splash until the font is ready to avoid a
