@@ -74,24 +74,53 @@ export async function lookupWord(rawWord: string): Promise<WordResult> {
 
     const axErr = err as AxiosError;
     if (axErr.isAxiosError) {
-      // 404 → word not found.
-      if (axErr.response?.status === 404) {
+      // Request timed out (slow or unreachable network).
+      if (axErr.code === 'ECONNABORTED' || /timeout/i.test(axErr.message)) {
         throw new LookupError(
-          'not_found',
-          `Sorry, we couldn't find "${word}". Please check the spelling and try again.`,
+          'network',
+          'The request timed out. Please check your connection and try again.',
         );
       }
-      // No response at all → network / connectivity problem or timeout.
+      // No response at all → offline / DNS / connection refused.
       if (!axErr.response) {
         throw new LookupError(
           'network',
           'Network error. Please check your internet connection and try again.',
         );
       }
-      // Any other HTTP status from the API.
+      const httpStatus = axErr.response.status;
+      // 404 → word not found.
+      if (httpStatus === 404) {
+        throw new LookupError(
+          'not_found',
+          `Sorry, we couldn't find "${word}". Please check the spelling and try again.`,
+        );
+      }
+      // 429 → rate limited.
+      if (httpStatus === 429) {
+        throw new LookupError(
+          'api',
+          "You're searching too fast. Please wait a moment and try again.",
+        );
+      }
+      // 5xx → the dictionary service is down.
+      if (httpStatus >= 500) {
+        throw new LookupError(
+          'api',
+          'The dictionary service is temporarily unavailable. Please try again later.',
+        );
+      }
+      // 400 / other client errors.
+      if (httpStatus === 400) {
+        throw new LookupError(
+          'api',
+          "That search couldn't be processed. Try a different spelling.",
+        );
+      }
+      // Any other HTTP status.
       throw new LookupError(
         'api',
-        `The dictionary service returned an error (${axErr.response.status}). Please try again.`,
+        `The dictionary service returned an error (${httpStatus}). Please try again.`,
       );
     }
 

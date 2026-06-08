@@ -15,6 +15,9 @@ import { FavoritesProvider } from '@/context/favorites';
 import { SearchHistoryProvider } from '@/context/search-history';
 import { WW } from '@/constants/wordwise';
 
+// Expo Router renders this on any uncaught render error anywhere in the app.
+export { AppErrorBoundary as ErrorBoundary } from '@/components/error-boundary';
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Lora_400Regular,

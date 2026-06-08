@@ -36,7 +36,7 @@ export function validateWord(raw: string): string | null {
 
   // 6. Contains symbols — anything that isn't a Latin letter, hyphen or apostrophe.
   if (/[^\p{Script=Latin}'-]/u.test(word)) {
-    return 'Please search for a word without symbols.';
+    return 'Please search for a word instead of numbers.';
   }
 
   // 7. No actual letters (e.g. "--", "''", "-'-").
