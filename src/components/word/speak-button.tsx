@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { WW } from '@/constants/wordwise';
+import { useThemeColors, type Palette } from '@/context/theme';
 
 /**
  * Text-to-speech pronunciation fallback for words the dictionary API has no
@@ -11,9 +11,10 @@ import { WW } from '@/constants/wordwise';
  * (Web Speech API on web), so there's always a way to hear a word.
  */
 export function SpeakButton({ word }: { word: string }) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const [speaking, setSpeaking] = useState(false);
 
-  // Stop any speech if this button unmounts.
   useEffect(() => () => {
     Speech.stop();
   }, []);
@@ -49,19 +50,20 @@ export function SpeakButton({ word }: { word: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: WW.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: WW.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
-});
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    button: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: WW.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: WW.primary,
+      shadowOpacity: 0.35,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    pressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
+  });

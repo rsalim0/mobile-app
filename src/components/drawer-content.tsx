@@ -4,18 +4,21 @@ import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
 } from 'expo-router/build/react-navigation/drawer';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Font, WW } from '@/constants/wordwise';
+import { Font } from '@/constants/wordwise';
 import { useFavorites } from '@/context/favorites';
 import { useSearchHistory } from '@/context/search-history';
+import { useThemeColors, type Palette } from '@/context/theme';
 
 /**
- * Custom drawer: WordWise header, a Search shortcut, the SEARCH HISTORY list,
- * and a Clear history action (Activity 4). Tapping a history word re-runs the
- * search by navigating to its detail route.
+ * Custom drawer: WordWise header, a Search shortcut, the SAVED WORDS and
+ * SEARCH HISTORY lists, and a Clear history action (Activity 4).
  */
 export function DrawerContent(props: DrawerContentComponentProps) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const { history, clear } = useSearchHistory();
   const { favorites } = useFavorites();
 
@@ -91,70 +94,71 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: WW.bg },
-  scrollContent: { paddingTop: 8, paddingHorizontal: 8 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-  },
-  logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: WW.chip,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brand: { fontSize: 28, fontFamily: Font.display, color: WW.text },
-  searchItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: WW.chip,
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginTop: 4,
-  },
-  searchLabel: { color: WW.chipText, fontFamily: Font.bold, fontSize: 16 },
-  sectionLabel: {
-    color: WW.textSecondary,
-    fontFamily: Font.bold,
-    fontSize: 13,
-    letterSpacing: 1,
-    paddingHorizontal: 14,
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  empty: {
-    color: WW.textMuted,
-    fontFamily: Font.regular,
-    fontSize: 15,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  historyWord: { color: WW.text, fontFamily: Font.medium, fontSize: 16, flex: 1 },
-  clearRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    borderTopWidth: 1,
-    borderTopColor: WW.divider,
-  },
-  clearText: { color: WW.destructive, fontFamily: Font.bold, fontSize: 16 },
-  pressed: { opacity: 0.6 },
-});
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: WW.bg },
+    scrollContent: { paddingTop: 8, paddingHorizontal: 8 },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 16,
+    },
+    logo: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: WW.chip,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    brand: { fontSize: 28, fontFamily: Font.display, color: WW.text },
+    searchItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      backgroundColor: WW.chip,
+      borderRadius: 16,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      marginTop: 4,
+    },
+    searchLabel: { color: WW.chipText, fontFamily: Font.bold, fontSize: 16 },
+    sectionLabel: {
+      color: WW.textSecondary,
+      fontFamily: Font.bold,
+      fontSize: 13,
+      letterSpacing: 1,
+      paddingHorizontal: 14,
+      marginTop: 24,
+      marginBottom: 8,
+    },
+    empty: {
+      color: WW.textMuted,
+      fontFamily: Font.regular,
+      fontSize: 15,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+    },
+    historyItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      borderRadius: 12,
+    },
+    historyWord: { color: WW.text, fontFamily: Font.medium, fontSize: 16, flex: 1 },
+    clearRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 22,
+      paddingVertical: 18,
+      borderTopWidth: 1,
+      borderTopColor: WW.divider,
+    },
+    clearText: { color: WW.destructive, fontFamily: Font.bold, fontSize: 16 },
+    pressed: { opacity: 0.6 },
+  });

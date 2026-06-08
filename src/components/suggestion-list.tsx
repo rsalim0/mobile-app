@@ -1,7 +1,9 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Font, WW } from '@/constants/wordwise';
+import { Font } from '@/constants/wordwise';
+import { useThemeColors, type Palette } from '@/context/theme';
 
 interface SuggestionListProps {
   suggestions: string[];
@@ -23,10 +25,9 @@ function splitPrefix(word: string, query: string): [string, string] {
 }
 
 /**
- * Live autocomplete dropdown shown under the search bar (Daisy "Search
- * Autocomplete" screen). The first row is highlighted as the default choice.
- * The row and the fill (↖) control are sibling Pressables — never nested, so
- * react-native-web doesn't render a <button> inside a <button>.
+ * Live autocomplete dropdown shown under the search bar. The row and the fill
+ * (↖) control are sibling Pressables — never nested, so react-native-web
+ * doesn't render a <button> inside a <button>.
  */
 export function SuggestionList({
   suggestions,
@@ -34,6 +35,9 @@ export function SuggestionList({
   onSelect,
   onFill,
 }: SuggestionListProps) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
+
   return (
     <View style={styles.list}>
       {suggestions.map((word, i) => {
@@ -72,26 +76,27 @@ export function SuggestionList({
   );
 }
 
-const styles = StyleSheet.create({
-  list: { marginTop: 12 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderRadius: 14,
-  },
-  rowHighlighted: { backgroundColor: WW.chip },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: WW.divider, borderRadius: 0 },
-  main: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingVertical: 18,
-  },
-  fill: { padding: 8 },
-  word: { flex: 1, fontSize: 18 },
-  matched: { fontFamily: Font.bold, color: WW.text },
-  rest: { fontFamily: Font.medium, color: WW.textSecondary },
-  pressed: { opacity: 0.5 },
-});
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    list: { marginTop: 12 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      borderRadius: 14,
+    },
+    rowHighlighted: { backgroundColor: WW.chip },
+    rowDivider: { borderBottomWidth: 1, borderBottomColor: WW.divider, borderRadius: 0 },
+    main: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      paddingVertical: 18,
+    },
+    fill: { padding: 8 },
+    word: { flex: 1, fontSize: 18 },
+    matched: { fontFamily: Font.bold, color: WW.text },
+    rest: { fontFamily: Font.medium, color: WW.textSecondary },
+    pressed: { opacity: 0.5 },
+  });

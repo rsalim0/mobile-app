@@ -17,6 +17,7 @@ interface FavoritesValue {
   /** Add the word if absent, remove it if present. Returns the new state. */
   toggle: (word: string) => void;
   remove: (word: string) => void;
+  clearAll: () => void;
 }
 
 const FavoritesContext = createContext<FavoritesValue | undefined>(undefined);
@@ -60,9 +61,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     setFavorites((prev) => prev.filter((w) => w.toLowerCase() !== word));
   }, []);
 
+  const clearAll = useCallback(() => setFavorites([]), []);
+
   const value = useMemo(
-    () => ({ favorites, isFavorite, toggle, remove }),
-    [favorites, isFavorite, toggle, remove],
+    () => ({ favorites, isFavorite, toggle, remove, clearAll }),
+    [favorites, isFavorite, toggle, remove, clearAll],
   );
 
   return (

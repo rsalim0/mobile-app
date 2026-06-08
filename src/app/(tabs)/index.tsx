@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
 import { DrawerActions } from 'expo-router/build/react-navigation/routers';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -14,19 +14,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SuggestionList } from '@/components/suggestion-list';
-import { Font, SUGGESTED_WORDS, WW } from '@/constants/wordwise';
+import { Font, SUGGESTED_WORDS } from '@/constants/wordwise';
 import { useSearchHistory } from '@/context/search-history';
+import { useThemeColors, type Palette } from '@/context/theme';
 import { fetchSuggestions, warmUpSuggestions } from '@/services/suggestions';
 import { validateWord } from '@/utils/validate-word';
 import { randomWord, wordOfTheDay } from '@/utils/word-picks';
 
 // On web, kill the default blue focus outline — we show a focused border instead.
-// `outlineStyle` is a react-native-web style prop not in RN's TS types, hence the cast.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const noOutline: any =
   Platform.OS === 'web' ? { outlineStyle: 'none' } : undefined;
 
 export default function SearchScreen() {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const navigation = useNavigation();
   const { history } = useSearchHistory();
   const [query, setQuery] = useState('');
@@ -76,7 +78,7 @@ export default function SearchScreen() {
   const wotd = wordOfTheDay();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
@@ -186,98 +188,99 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WW.bg },
-  content: { paddingHorizontal: 24, paddingBottom: 40, gap: 0 },
-  menuBtn: { paddingVertical: 12, marginBottom: 8, alignSelf: 'flex-start' },
-  logo: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: WW.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 48, fontFamily: Font.display, color: WW.text, marginTop: 16 },
-  subtitle: { fontSize: 18, fontFamily: Font.regular, color: WW.textSecondary, marginTop: 4 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: WW.card,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    paddingLeft: 24,
-    paddingRight: 6,
-    paddingVertical: 6,
-    marginTop: 28,
-  },
-  searchBarFocused: { borderColor: WW.primary, backgroundColor: WW.bg },
-  input: { flex: 1, fontSize: 18, fontFamily: Font.regular, color: WW.text, paddingVertical: 12 },
-  searchBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: WW.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  helper: { fontSize: 15, fontFamily: Font.regular, color: WW.textSecondary, marginTop: 16 },
-  helperBold: { fontFamily: Font.bold, color: WW.text },
-  surprise: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 8,
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: WW.cardBorder,
-    backgroundColor: WW.card,
-  },
-  surpriseText: { fontSize: 15, fontFamily: Font.semibold, color: WW.primary },
-  error: { fontSize: 15, fontFamily: Font.semibold, color: WW.destructive, marginTop: 16 },
-  sectionLabel: {
-    fontSize: 13,
-    fontFamily: Font.bold,
-    letterSpacing: 1,
-    color: WW.textSecondary,
-    marginTop: 32,
-    marginBottom: 12,
-  },
-  listCard: {
-    backgroundColor: WW.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: WW.cardBorder,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: WW.cardBorder },
-  rowPressed: { backgroundColor: WW.chip },
-  rowWord: { flex: 1, fontSize: 18, fontFamily: Font.medium, color: WW.text },
-  pressed: { opacity: 0.85 },
-  wotd: {
-    backgroundColor: WW.primary,
-    borderRadius: 24,
-    padding: 24,
-    marginTop: 28,
-    gap: 6,
-  },
-  wotdLabel: {
-    color: '#dcc7a3',
-    fontSize: 13,
-    fontFamily: Font.bold,
-    letterSpacing: 1,
-  },
-  wotdWord: { color: WW.onPrimary, fontSize: 32, fontFamily: Font.display },
-  wotdDef: { color: '#f1e7d4', fontSize: 16, fontFamily: Font.regular },
-});
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: WW.bg },
+    content: { paddingHorizontal: 24, paddingBottom: 40, gap: 0 },
+    menuBtn: { paddingVertical: 12, marginBottom: 8, alignSelf: 'flex-start' },
+    logo: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: WW.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: { fontSize: 48, fontFamily: Font.display, color: WW.text, marginTop: 16 },
+    subtitle: { fontSize: 18, fontFamily: Font.regular, color: WW.textSecondary, marginTop: 4 },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: WW.card,
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      paddingLeft: 24,
+      paddingRight: 6,
+      paddingVertical: 6,
+      marginTop: 28,
+    },
+    searchBarFocused: { borderColor: WW.primary, backgroundColor: WW.bg },
+    input: { flex: 1, fontSize: 18, fontFamily: Font.regular, color: WW.text, paddingVertical: 12 },
+    searchBtn: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: WW.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    helper: { fontSize: 15, fontFamily: Font.regular, color: WW.textSecondary, marginTop: 16 },
+    helperBold: { fontFamily: Font.bold, color: WW.text },
+    surprise: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 8,
+      marginTop: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: WW.cardBorder,
+      backgroundColor: WW.card,
+    },
+    surpriseText: { fontSize: 15, fontFamily: Font.semibold, color: WW.primary },
+    error: { fontSize: 15, fontFamily: Font.semibold, color: WW.destructive, marginTop: 16 },
+    sectionLabel: {
+      fontSize: 13,
+      fontFamily: Font.bold,
+      letterSpacing: 1,
+      color: WW.textSecondary,
+      marginTop: 32,
+      marginBottom: 12,
+    },
+    listCard: {
+      backgroundColor: WW.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: WW.cardBorder,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+    },
+    rowDivider: { borderBottomWidth: 1, borderBottomColor: WW.cardBorder },
+    rowPressed: { backgroundColor: WW.chip },
+    rowWord: { flex: 1, fontSize: 18, fontFamily: Font.medium, color: WW.text },
+    pressed: { opacity: 0.85 },
+    wotd: {
+      backgroundColor: WW.primary,
+      borderRadius: 24,
+      padding: 24,
+      marginTop: 28,
+      gap: 6,
+    },
+    wotdLabel: {
+      color: '#dcc7a3',
+      fontSize: 13,
+      fontFamily: Font.bold,
+      letterSpacing: 1,
+    },
+    wotdWord: { color: WW.onPrimary, fontSize: 32, fontFamily: Font.display },
+    wotdDef: { color: '#f1e7d4', fontSize: 16, fontFamily: Font.regular },
+  });

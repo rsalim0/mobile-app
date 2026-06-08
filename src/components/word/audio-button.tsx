@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
-import { WW } from '@/constants/wordwise';
+import { useThemeColors, type Palette } from '@/context/theme';
 
 /**
  * Circular pronunciation button (Activity 3) with full playback-state
@@ -12,6 +12,8 @@ import { WW } from '@/constants/wordwise';
  * a disabled/broken audio button (Activity 3.6).
  */
 export function AudioButton({ url }: { url: string }) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const player = useAudioPlayer({ uri: url }, { updateInterval: 200 });
   const status = useAudioPlayerStatus(player);
 
@@ -33,7 +35,6 @@ export function AudioButton({ url }: { url: string }) {
       player.pause(); // pause — keeps position so the next tap resumes
       return;
     }
-    // If we're at the end, restart from the beginning; otherwise resume.
     const atEnd =
       status.duration > 0 && status.currentTime >= status.duration - 0.05;
     if (atEnd) player.seekTo(0);
@@ -60,19 +61,20 @@ export function AudioButton({ url }: { url: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: WW.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: WW.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
-});
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    button: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: WW.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: WW.primary,
+      shadowOpacity: 0.35,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    pressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
+  });

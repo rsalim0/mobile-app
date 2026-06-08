@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Font, WW } from '@/constants/wordwise';
+import { Font } from '@/constants/wordwise';
+import { useThemeColors, type Palette } from '@/context/theme';
 
 interface StateViewProps {
   /** Icon element shown in the circular badge (e.g. an <Ionicons />). */
@@ -35,6 +37,9 @@ export function StateView({
   footnote,
   extra,
 }: StateViewProps) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
+
   return (
     <View style={styles.root}>
       <View style={styles.center}>
@@ -68,45 +73,46 @@ export function StateView({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 24, paddingBottom: 24 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18 },
-  contextPill: {
-    backgroundColor: WW.card,
-    borderWidth: 1,
-    borderColor: WW.cardBorder,
-    borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    marginBottom: 6,
-  },
-  iconBadge: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: WW.chip,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 30, fontFamily: Font.display, color: WW.text, textAlign: 'center' },
-  message: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: Font.regular,
-    color: WW.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 12,
-  },
-  footer: { gap: 16, alignItems: 'center' },
-  primaryBtn: {
-    alignSelf: 'stretch',
-    backgroundColor: WW.primary,
-    borderRadius: 999,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  primaryText: { color: WW.onPrimary, fontSize: 17, fontFamily: Font.bold },
-  secondaryText: { color: WW.primary, fontSize: 16, fontFamily: Font.semibold },
-  footnote: { color: WW.textMuted, fontSize: 14, fontFamily: Font.regular, textAlign: 'center' },
-  pressed: { opacity: 0.85 },
-});
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    root: { flex: 1, paddingHorizontal: 24, paddingBottom: 24 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18 },
+    contextPill: {
+      backgroundColor: WW.card,
+      borderWidth: 1,
+      borderColor: WW.cardBorder,
+      borderRadius: 999,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      marginBottom: 6,
+    },
+    iconBadge: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: WW.chip,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: { fontSize: 30, fontFamily: Font.display, color: WW.text, textAlign: 'center' },
+    message: {
+      fontSize: 16,
+      lineHeight: 24,
+      fontFamily: Font.regular,
+      color: WW.textSecondary,
+      textAlign: 'center',
+      paddingHorizontal: 12,
+    },
+    footer: { gap: 16, alignItems: 'center' },
+    primaryBtn: {
+      alignSelf: 'stretch',
+      backgroundColor: WW.primary,
+      borderRadius: 999,
+      paddingVertical: 18,
+      alignItems: 'center',
+    },
+    primaryText: { color: WW.onPrimary, fontSize: 17, fontFamily: Font.bold },
+    secondaryText: { color: WW.primary, fontSize: 16, fontFamily: Font.semibold },
+    footnote: { color: WW.textMuted, fontSize: 14, fontFamily: Font.regular, textAlign: 'center' },
+    pressed: { opacity: 0.85 },
+  });

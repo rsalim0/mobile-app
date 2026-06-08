@@ -1,25 +1,19 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AudioButton } from '@/components/word/audio-button';
 import { MeaningCard } from '@/components/word/meaning-card';
 import { SpeakButton } from '@/components/word/speak-button';
+import { WordLoader } from '@/components/word/word-loader';
 import { StateView } from '@/components/state-view';
-import { Font, WW } from '@/constants/wordwise';
+import { Font } from '@/constants/wordwise';
 import { useFavorites } from '@/context/favorites';
 import { useSearchHistory } from '@/context/search-history';
+import { useThemeColors, type Palette } from '@/context/theme';
 import { lookupWord } from '@/services/dictionary';
 import { fetchSpellingSuggestions } from '@/services/suggestions';
 import {
@@ -65,8 +59,7 @@ interface PronVariant {
   accent?: string;
 }
 
-/** Each audio-bearing pronunciation of an entry, with its own IPA + region.
- *  This is what surfaces UK /ɹuːt/ vs US /ɹaʊt/ for "route". */
+/** Each audio-bearing pronunciation of an entry, with its own IPA + region. */
 function entryAudioVariants(entry: DictionaryEntry): PronVariant[] {
   const out: PronVariant[] = [];
   const seen = new Set<string>();
@@ -125,16 +118,6 @@ function groupByPronunciation(entries: DictionaryEntry[]): PronGroup[] {
   }));
 }
 
-/** Collect up to 12 distinct synonyms across all meanings/definitions. */
-function collectSynonyms(result: WordResult): string[] {
-  return collectField(result, 'synonyms');
-}
-
-/** Collect up to 12 distinct antonyms across all meanings/definitions. */
-function collectAntonyms(result: WordResult): string[] {
-  return collectField(result, 'antonyms');
-}
-
 function collectField(result: WordResult, field: 'synonyms' | 'antonyms'): string[] {
   const set = new Set<string>();
   for (const entry of result.entries) {
@@ -150,8 +133,7 @@ function collectField(result: WordResult, field: 'synonyms' | 'antonyms'): strin
 function buildShareText(result: WordResult): string {
   const groups = groupByPronunciation(result.entries);
   const phon = groups[0]?.primaryText;
-  const firstDef =
-    result.entries[0]?.meanings[0]?.definitions[0]?.definition;
+  const firstDef = result.entries[0]?.meanings[0]?.definitions[0]?.definition;
   const lines = [result.word + (phon ? `  ${phon}` : '')];
   if (firstDef) lines.push(firstDef);
   lines.push('— via WordWise');
@@ -159,6 +141,8 @@ function buildShareText(result: WordResult): string {
 }
 
 export default function WordDetailsScreen() {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const { word } = useLocalSearchParams<{ word: string }>();
   const term = decodeURIComponent(word ?? '');
   const { addWord } = useSearchHistory();
@@ -181,7 +165,6 @@ export default function WordDetailsScreen() {
         errorKind: kind,
         message: e.message ?? 'Something went wrong. Please try again.',
       });
-      // "Did you mean?" — offer close spellings when a word isn't found.
       if (kind === 'not_found') {
         fetchSpellingSuggestions(term).then(setDidYouMean);
       }
@@ -197,7 +180,7 @@ export default function WordDetailsScreen() {
 
   function goBack() {
     if (router.canGoBack()) router.back();
-    else router.replace('/');
+    else router.replace('/' as never);
   }
 
   const result = status.kind === 'success' ? status.result : null;
@@ -216,7 +199,7 @@ export default function WordDetailsScreen() {
         {result ? <WordActions result={result} /> : null}
       </View>
 
-      {status.kind === 'loading' && <LoadingState term={term} />}
+      {status.kind === 'loading' && <WordLoader term={term} />}
 
       {status.kind === 'error' && status.errorKind === 'not_found' && (
         <StateView
@@ -231,7 +214,7 @@ export default function WordDetailsScreen() {
           primaryLabel="Try again"
           onPrimary={goBack}
           secondaryLabel="Browse popular words"
-          onSecondary={() => router.replace('/')}
+          onSecondary={() => router.replace('/' as never)}
           extra={
             didYouMean.length > 0 ? (
               <View style={styles.didYouMean}>
@@ -271,7 +254,7 @@ export default function WordDetailsScreen() {
           primaryLabel="Retry"
           onPrimary={fetchWord}
           secondaryLabel="Back to search"
-          onSecondary={() => router.replace('/')}
+          onSecondary={() => router.replace('/' as never)}
         />
       )}
 
@@ -282,6 +265,8 @@ export default function WordDetailsScreen() {
 
 /** Bookmark / copy / share actions for the current word. */
 function WordActions({ result }: { result: WordResult }) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const { isFavorite, toggle } = useFavorites();
   const [copied, setCopied] = useState(false);
   const fav = isFavorite(result.word);
@@ -335,23 +320,7 @@ function WordActions({ result }: { result: WordResult }) {
   );
 }
 
-function LoadingState({ term }: { term: string }) {
-  return (
-    <View style={styles.loading}>
-      <View style={styles.spinnerBadge}>
-        <ActivityIndicator size="large" color={WW.primary} />
-      </View>
-      <Text style={styles.loadingText}>Looking it up…</Text>
-      <Text style={styles.loadingWord}>&ldquo;{term}&rdquo;</Text>
-    </View>
-  );
-}
-
-/** One distinct pronunciation group and all the meanings that share it.
- *  - several audio variants → a stacked list, each with its own IPA + region
- *    (UK /ɹuːt/ vs US /ɹaʊt/ for "route")
- *  - one audio variant → inline phonetic + speaker
- *  - no audio at all → phonetic + a text-to-speech speaker (e.g. "insane") */
+/** One distinct pronunciation group and all the meanings that share it. */
 function PronGroupBlock({
   group,
   word,
@@ -361,6 +330,8 @@ function PronGroupBlock({
   word: string;
   showRule: boolean;
 }) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const { primaryText, variants, meanings } = group;
 
   return (
@@ -399,6 +370,8 @@ function PronGroupBlock({
 
 /** A tappable label + chip list (synonyms / antonyms). */
 function ChipSection({ label, words }: { label: string; words: string[] }) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   if (words.length === 0) return null;
   return (
     <View style={styles.synonyms}>
@@ -418,6 +391,8 @@ function ChipSection({ label, words }: { label: string; words: string[] }) {
 }
 
 function SuccessState({ result }: { result: WordResult }) {
+  const WW = useThemeColors();
+  const styles = useMemo(() => makeStyles(WW), [WW]);
   const groups = groupByPronunciation(result.entries);
 
   return (
@@ -428,89 +403,78 @@ function SuccessState({ result }: { result: WordResult }) {
         <PronGroupBlock key={gi} group={group} word={result.word} showRule={gi > 0} />
       ))}
 
-      <ChipSection label="SYNONYMS" words={collectSynonyms(result)} />
-      <ChipSection label="ANTONYMS" words={collectAntonyms(result)} />
+      <ChipSection label="SYNONYMS" words={collectField(result, 'synonyms')} />
+      <ChipSection label="ANTONYMS" words={collectField(result, 'antonyms')} />
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WW.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  iconBtn: { padding: 4 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  actionPressed: { opacity: 0.5 },
+const makeStyles = (WW: Palette) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: WW.bg },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 8,
+      paddingBottom: 4,
+    },
+    iconBtn: { padding: 4 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+    actionPressed: { opacity: 0.5 },
 
-  content: { paddingHorizontal: 24, paddingBottom: 48, gap: 16 },
-  word: { fontSize: 56, fontFamily: Font.display, color: WW.text, marginTop: 4 },
-  entryBlock: { gap: 16 },
-  entryRule: {
-    borderTopWidth: 1,
-    borderTopColor: WW.divider,
-    paddingTop: 24,
-    marginTop: 8,
-  },
-  phoneticRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 12,
-  },
-  phonetic: { fontSize: 22, fontFamily: Font.regular, color: WW.textSecondary },
-  variantList: { gap: 16, marginBottom: 8 },
-  variantRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  pronLabel: {
-    fontSize: 13,
-    fontFamily: Font.semibold,
-    color: WW.textSecondary,
-    letterSpacing: 1,
-  },
+    content: { paddingHorizontal: 24, paddingBottom: 48, gap: 16 },
+    word: { fontSize: 56, fontFamily: Font.display, color: WW.text, marginTop: 4 },
+    entryBlock: { gap: 16 },
+    entryRule: {
+      borderTopWidth: 1,
+      borderTopColor: WW.divider,
+      paddingTop: 24,
+      marginTop: 8,
+    },
+    phoneticRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      marginBottom: 12,
+    },
+    phonetic: { fontSize: 22, fontFamily: Font.regular, color: WW.textSecondary },
+    variantList: { gap: 16, marginBottom: 8 },
+    variantRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    pronLabel: {
+      fontSize: 13,
+      fontFamily: Font.semibold,
+      color: WW.textSecondary,
+      letterSpacing: 1,
+    },
 
-  synonyms: { marginTop: 12, gap: 14 },
-  synLabel: {
-    fontSize: 13,
-    fontFamily: Font.bold,
-    letterSpacing: 1,
-    color: WW.textSecondary,
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  chip: {
-    backgroundColor: WW.chip,
-    borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  chipPressed: { opacity: 0.7 },
-  chipText: { color: WW.chipText, fontSize: 16, fontFamily: Font.medium },
+    synonyms: { marginTop: 12, gap: 14 },
+    synLabel: {
+      fontSize: 13,
+      fontFamily: Font.bold,
+      letterSpacing: 1,
+      color: WW.textSecondary,
+    },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    chip: {
+      backgroundColor: WW.chip,
+      borderRadius: 999,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+    },
+    chipPressed: { opacity: 0.7 },
+    chipText: { color: WW.chipText, fontSize: 16, fontFamily: Font.medium },
 
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  spinnerBadge: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: WW.chip,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: { fontSize: 20, fontFamily: Font.semibold, color: WW.text },
-  loadingWord: { fontSize: 16, fontFamily: Font.regular, color: WW.textMuted },
+    ctx: { fontSize: 16, fontFamily: Font.regular, color: WW.textSecondary },
+    ctxBold: { color: WW.text, fontFamily: Font.bold },
 
-  ctx: { fontSize: 16, fontFamily: Font.regular, color: WW.textSecondary },
-  ctxBold: { color: WW.text, fontFamily: Font.bold },
-
-  didYouMean: { alignItems: 'center', gap: 12, marginTop: 8 },
-  didYouMeanLabel: { fontSize: 15, fontFamily: Font.semibold, color: WW.textSecondary },
-  didYouMeanChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'center',
-  },
-});
+    didYouMean: { alignItems: 'center', gap: 12, marginTop: 8 },
+    didYouMeanLabel: { fontSize: 15, fontFamily: Font.semibold, color: WW.textSecondary },
+    didYouMeanChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      justifyContent: 'center',
+    },
+  });
