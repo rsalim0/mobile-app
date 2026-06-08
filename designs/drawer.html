@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=430, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>:root { --background: #ffffff; --foreground: #0f172a; --card: #f8fafc; --card-foreground: #0f172a; --popover: #ffffff; --popover-foreground: #0f172a; --primary: #4f46e5; --primary-foreground: #ffffff; --secondary: #eef2ff; --secondary-foreground: #3730a3; --muted: #f1f5f9; --muted-foreground: #64748b; --accent: #eef2ff; --accent-foreground: #3730a3; --destructive: #dc2626; --destructive-foreground: #ffffff; --border: #e2e8f0; --input: #f1f5f9; --ring: #4f46e5; --chart-1: #4f46e5; --chart-2: #eef2ff; --chart-3: #eef2ff; --chart-4: #64748b; --chart-5: #e2e8f0; --radius: 1rem; --font-body: Inter, system-ui, sans-serif; --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif; --shape: round; }</style>
+<style type="text/tailwindcss">
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+}
+@theme {
+  --radius-xs: calc(var(--radius) - 8px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-4xl: calc(var(--radius) + 24px);
+}
+</style>
+<style>
+html, body { margin: 0; padding: 0; }
+body {
+  /* The shell owns device geometry: width is authoritative (overrides any
+     inline width an older generated doc baked in, so every screen conforms to
+     the device), min-height fills the viewport so short screens look like a
+     phone. Taller content has no overflow-y constraint, so it scrolls. */
+  width: 430px !important;
+  min-height: 932px;
+  font-family: var(--font-body, system-ui, sans-serif);
+  background: var(--background, #ffffff);
+  color: var(--foreground, #0f172a);
+  /* Grayscale AA stays crisp under the canvas scale transform; srcDoc can't inherit the host page's smoothing. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Safe-area top inset so AI content doesn't bump into the squircle's
+     rounded corners. Screens with a full-bleed image/video at the top
+     can opt out by setting margin-top: -16px on their first child. */
+  padding-top: 16px;
+  /* Belt-and-braces against the AI emitting layouts wider than the
+     phone frame. The outer squircle wrapper already clips, but without
+     these the user sees content chopped off at the edge instead of
+     fitting. `overflow-x: clip` catches any residual horizontal
+     overflow without creating a new block-formatting context. */
+  overflow-x: clip;
+}
+/* Flex/grid items default to `min-width: auto`, which resolves to the
+   item's intrinsic content width. A two-up card row with content that
+   wants more than ~215px per cell will then expand the row past 430px,
+   pushing the right card out of the squircle (visible as a cleanly
+   sliced right edge on the second card). `min-width: 0` lets flex/grid
+   children shrink below their content size so they fit the 430px body.
+   No-op for non-flex/grid elements (their `min-width: auto` resolves
+   to 0 already), so this is safe to apply globally. SVGs are excluded
+   because charts/illustrations depend on their natural intrinsic size. */
+body *:not(svg):not(svg *) { min-width: 0; }
+/* Common hero patterns the AI uses — extend them up under the safe-area
+   so they read as edge-to-edge instead of leaving a gap above. */
+body > img:first-child,
+body > picture:first-child,
+body > video:first-child,
+body > [data-fullbleed]:first-child {
+  margin-top: -16px;
+}
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading, inherit); }
+/* Tailwind v4 preflight resets buttons to text-align: inherit. If the
+   surrounding context has text-align: end / direction: rtl / etc, plain
+   <button>Label</button> renders right-aligned and clips on PNG export.
+   Force a sane default; explicit text-* utilities on the button still win. */
+button { text-align: center; }
+iconify-icon:not([width]):not([height]) {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+}
+*, *::before, *::after { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; }
+
+/* iOS 26 — Liquid Glass utility. Compose with Tailwind for radius/size.
+   Needs SOMETHING visible behind it (imagery, color, content) to read as
+   glass; the SVG #liquid-glass-distortion filter lives in the body. */
+.liquid-glass {
+  position: relative;
+  isolation: isolate;
+  background: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: url(#liquid-glass-distortion) blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 30px rgba(15, 23, 42, 0.18);
+}
+.liquid-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0) 65%,
+    rgba(255, 255, 255, 0.22) 100%);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.liquid-glass-dark {
+  background: rgba(20, 20, 22, 0.38);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.liquid-glass-dark::after {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0) 65%,
+    rgba(255, 255, 255, 0.10) 100%);
+  mix-blend-mode: screen;
+}
+/* Fallback for browsers without backdrop-filter (older Firefox) — keep
+   the element visible by raising opacity. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass { background: rgba(255, 255, 255, 0.85); }
+  .liquid-glass-dark { background: rgba(20, 20, 22, 0.85); }
+}
+
+/* Duolingo-style chunky 3D button. The dark edge is an inset shadow so
+   it works on any background color the AI picks (bg-primary, bg-accent,
+   bg-destructive, ...). On press the button flattens. */
+.btn-duo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 80ms ease, box-shadow 80ms ease, filter 80ms ease;
+  cursor: pointer;
+  user-select: none;
+}
+.btn-duo:hover { filter: brightness(1.05); }
+.btn-duo:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+}
+/* Light/outline variant — use on a near-white button to get the same
+   chunky edge in a soft gray instead of darkening the surface. */
+.btn-duo-light {
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.08),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.10);
+}
+.btn-duo-light:active {
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.10);
+}
+/* Tappable card — 2px border all sides, 4px bottom for the press affordance. */
+.card-duo {
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.08),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.06);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+.card-duo-tappable { cursor: pointer; }
+.card-duo-tappable:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.06);
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer crossorigin></script>
+<script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" defer crossorigin></script>
+</head>
+<body><svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
+<defs>
+<filter id="liquid-glass-distortion" x="0%" y="0%" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves="2" seed="3" result="noise"/>
+<feGaussianBlur in="noise" stdDeviation="1" result="softNoise"/>
+<feDisplacementMap in="SourceGraphic" in2="softNoise" scale="38" xChannelSelector="R" yChannelSelector="G"/>
+</filter>
+</defs>
+</svg>
+<div class="relative w-full" style="min-height:932px;" data-aid="vtqicn">
+
+  <!-- Search screen behind (dimmed) -->
+  <div class="absolute inset-0 px-5 pt-2" data-aid="3xpn3y">
+    <header class="h-14 flex items-center" data-aid="txknkv">
+      <div class="-ml-2 p-2 text-foreground" data-aid="6bfzbi">
+        <iconify-icon icon="lucide:menu" width="24" height="24" data-aid="w45gkz"></iconify-icon>
+      </div>
+    </header>
+    <div class="mt-6 space-y-6" data-aid="e2jxq3">
+      <h1 class="text-3xl font-heading font-bold text-foreground" data-aid="op6sug">Look up<br data-aid="btsklv" />any word.</h1>
+      <div class="flex items-center gap-2 w-full h-14 rounded-full bg-input px-5" data-aid="nnqvqw">
+        <span class="flex-1 text-muted-foreground" data-aid="b3ndy4">Search a word…</span>
+        <div class="size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center" data-aid="nwnbun">
+          <iconify-icon icon="lucide:search" width="20" height="20" data-aid="os7row"></iconify-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrim -->
+  <div class="absolute inset-0 bg-foreground/40 backdrop-blur-[1px]" data-aid="6azemv"></div>
+
+  <!-- Drawer -->
+  <div class="absolute inset-y-0 left-0 flex flex-col bg-card border-r border-border" style="width:82%;" data-aid="lflfgw">
+
+    <!-- Top wordmark -->
+    <div class="px-5 pt-8 pb-6" data-aid="vz44dx">
+      <div class="flex items-center gap-2" data-aid="rdnjex">
+        <div class="size-10 rounded-[var(--radius-lg)] bg-primary/10 flex items-center justify-center text-primary" data-aid="ygejeg">
+          <iconify-icon icon="lucide:book-open" width="24" height="24" data-aid="fvghxy"></iconify-icon>
+        </div>
+        <h2 class="text-2xl font-heading font-bold text-foreground" data-aid="4yv77i">WordWise</h2>
+      </div>
+    </div>
+
+    <!-- Scrollable nav -->
+    <div class="flex-1 overflow-y-auto px-5" data-aid="bp2gvh">
+
+      <!-- Primary nav -->
+      <div class="flex items-center gap-3 bg-secondary text-secondary-foreground rounded-[var(--radius-lg)] px-4 h-12" data-aid="korh4l">
+        <iconify-icon icon="lucide:search" width="20" height="20" data-aid="5xhf4w"></iconify-icon>
+        <span class="font-semibold" data-aid="4jylvg">Search</span>
+      </div>
+
+      <!-- History label -->
+      <p class="uppercase text-xs tracking-wide font-semibold text-muted-foreground mt-8 mb-3" data-aid="onoy5y">Search History</p>
+
+      <!-- History list -->
+      <div class="space-y-1" data-aid="dckq2w">
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="mrhf6b">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="f6aq5e"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="v6uisp">eloquent</span>
+        </a>
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="oqkmmw">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="m5evgs"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="lnar3q">serendipity</span>
+        </a>
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="bljauy">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="kooii3"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="5da3um">ephemeral</span>
+        </a>
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="7mzcwx">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="iiifas"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="fbvos7">quintessential</span>
+        </a>
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="su6djf">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="4pfjlf"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="ckycg4">lucid</span>
+        </a>
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="uzxa4n">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="fbm3rg"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="qpwxyx">ubiquitous</span>
+        </a>
+        <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)]" data-aid="hehvr3">
+          <iconify-icon icon="lucide:clock" width="18" height="18" class="text-muted-foreground" data-aid="fb5w3o"></iconify-icon>
+          <span class="font-medium text-foreground" data-aid="bkldlf">mellifluous</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Pinned bottom -->
+    <div class="px-5 py-4 border-t border-border" data-aid="mrsys4">
+      <a class="flex items-center gap-3 h-12 px-2 rounded-[var(--radius-lg)] text-destructive" data-aid="2syoso">
+        <iconify-icon icon="lucide:trash-2" width="20" height="20" data-aid="esok7y"></iconify-icon>
+        <span class="font-semibold" data-aid="pnkwhi">Clear history</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

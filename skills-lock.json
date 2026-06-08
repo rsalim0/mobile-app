@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "design-mobile-apps-with-daisy": {
+      "source": "daisy-now/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/SKILL.md",
+      "computedHash": "45265ef6d64c6c93480b42ac27939b29655c0407d9cb6baa2534c6ede1b1f9ec"
+    }
+  }
+}
