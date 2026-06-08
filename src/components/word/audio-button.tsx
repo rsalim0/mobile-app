@@ -1,28 +1,42 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
 import { WW } from '@/constants/wordwise';
 
 /**
- * Circular indigo pronunciation button (Activity 3).
- * Only render this when a real audio URL exists — the parent decides that, so
- * the `useAudioPlayer` hook here always receives a valid source.
+ * Circular pronunciation button (Activity 3) with full playback-state
+ * management: play, pause/resume, and stop (auto-reset to the start when a
+ * clip finishes). Only rendered when a real audio URL exists — there is never
+ * a disabled/broken audio button (Activity 3.6).
  */
 export function AudioButton({ url }: { url: string }) {
-  const player = useAudioPlayer({ uri: url }, { updateInterval: 300 });
+  const player = useAudioPlayer({ uri: url }, { updateInterval: 200 });
   const status = useAudioPlayerStatus(player);
 
   const isLoading = !status.isLoaded;
   const isPlaying = status.playing;
 
+  // Stop state: when the clip finishes, rewind so the next tap plays from 0.
+  useEffect(() => {
+    if (status.didJustFinish) player.seekTo(0);
+  }, [status.didJustFinish, player]);
+
+  // Stop playback if the button unmounts (navigating away).
+  useEffect(() => () => {
+    player.pause();
+  }, [player]);
+
   function onPress() {
     if (isPlaying) {
-      player.pause();
+      player.pause(); // pause — keeps position so the next tap resumes
       return;
     }
-    // Restart from the beginning each time, then play.
-    player.seekTo(0);
+    // If we're at the end, restart from the beginning; otherwise resume.
+    const atEnd =
+      status.duration > 0 && status.currentTime >= status.duration - 0.05;
+    if (atEnd) player.seekTo(0);
     player.play();
   }
 
