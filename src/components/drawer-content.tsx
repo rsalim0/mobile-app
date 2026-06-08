@@ -7,6 +7,7 @@ import {
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Font, WW } from '@/constants/wordwise';
+import { useFavorites } from '@/context/favorites';
 import { useSearchHistory } from '@/context/search-history';
 
 /**
@@ -16,6 +17,7 @@ import { useSearchHistory } from '@/context/search-history';
  */
 export function DrawerContent(props: DrawerContentComponentProps) {
   const { history, clear } = useSearchHistory();
+  const { favorites } = useFavorites();
 
   function go(path: string) {
     props.navigation.closeDrawer();
@@ -40,6 +42,23 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="search" size={18} color={WW.chipText} />
           <Text style={styles.searchLabel}>Search</Text>
         </Pressable>
+
+        {favorites.length > 0 ? (
+          <>
+            <Text style={styles.sectionLabel}>SAVED WORDS</Text>
+            {favorites.map((word) => (
+              <Pressable
+                key={word}
+                onPress={() => go(`/word/${encodeURIComponent(word)}`)}
+                style={({ pressed }) => [styles.historyItem, pressed && styles.pressed]}>
+                <Ionicons name="bookmark" size={16} color={WW.primary} />
+                <Text style={styles.historyWord} numberOfLines={1}>
+                  {word}
+                </Text>
+              </Pressable>
+            ))}
+          </>
+        ) : null}
 
         <Text style={styles.sectionLabel}>SEARCH HISTORY</Text>
 

@@ -18,6 +18,7 @@ import { Font, SUGGESTED_WORDS, WW } from '@/constants/wordwise';
 import { useSearchHistory } from '@/context/search-history';
 import { fetchSuggestions, warmUpSuggestions } from '@/services/suggestions';
 import { validateWord } from '@/utils/validate-word';
+import { randomWord, wordOfTheDay } from '@/utils/word-picks';
 
 // On web, kill the default blue focus outline — we show a focused border instead.
 // `outlineStyle` is a react-native-web style prop not in RN's TS types, hence the cast.
@@ -72,6 +73,7 @@ export default function SearchScreen() {
   const typing = query.trim().length > 0;
   const recent = history.length > 0;
   const list = recent ? history.slice(0, 8) : SUGGESTED_WORDS;
+  const wotd = wordOfTheDay();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -140,6 +142,15 @@ export default function SearchScreen() {
               </Text>
             )}
 
+            {/* Surprise me — look up a random interesting word. */}
+            <Pressable
+              accessibilityLabel="Surprise me with a random word"
+              onPress={() => goToWord(randomWord())}
+              style={({ pressed }) => [styles.surprise, pressed && styles.pressed]}>
+              <Ionicons name="shuffle" size={18} color={WW.primary} />
+              <Text style={styles.surpriseText}>Surprise me</Text>
+            </Pressable>
+
             <Text style={styles.sectionLabel}>
               {recent ? 'RECENT SEARCHES' : 'SUGGESTIONS'}
             </Text>
@@ -160,12 +171,15 @@ export default function SearchScreen() {
               ))}
             </View>
 
-            {/* Word of the day (decorative, from the Daisy design) */}
-            <View style={styles.wotd}>
+            {/* Word of the day — rotates daily; tap to look it up. */}
+            <Pressable
+              accessibilityLabel={`Word of the day: ${wotd.word}`}
+              onPress={() => goToWord(wotd.word)}
+              style={({ pressed }) => [styles.wotd, pressed && styles.pressed]}>
               <Text style={styles.wotdLabel}>WORD OF THE DAY</Text>
-              <Text style={styles.wotdWord}>petrichor</Text>
-              <Text style={styles.wotdDef}>the smell of rain on dry earth</Text>
-            </View>
+              <Text style={styles.wotdWord}>{wotd.word}</Text>
+              {wotd.blurb ? <Text style={styles.wotdDef}>{wotd.blurb}</Text> : null}
+            </Pressable>
           </>
         )}
       </ScrollView>
@@ -211,6 +225,20 @@ const styles = StyleSheet.create({
   },
   helper: { fontSize: 15, fontFamily: Font.regular, color: WW.textSecondary, marginTop: 16 },
   helperBold: { fontFamily: Font.bold, color: WW.text },
+  surprise: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: WW.cardBorder,
+    backgroundColor: WW.card,
+  },
+  surpriseText: { fontSize: 15, fontFamily: Font.semibold, color: WW.primary },
   error: { fontSize: 15, fontFamily: Font.semibold, color: WW.destructive, marginTop: 16 },
   sectionLabel: {
     fontSize: 13,

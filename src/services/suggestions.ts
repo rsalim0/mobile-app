@@ -47,3 +47,27 @@ export async function fetchSuggestions(
     return [];
   }
 }
+
+/**
+ * Spelling suggestions for a misspelled word ("did you mean?") via Datamuse's
+ * `sp` (spelled-like) query. Best-effort; excludes the original word itself.
+ */
+export async function fetchSpellingSuggestions(
+  word: string,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const q = word.trim();
+  if (!q) return [];
+  try {
+    const { data } = await datamuse.get<DatamuseWord[]>('/words', {
+      params: { sp: q, max: 6 },
+      signal,
+    });
+    if (!Array.isArray(data)) return [];
+    return data
+      .map((d) => d.word)
+      .filter((w) => w && !w.includes(' ') && w.toLowerCase() !== q.toLowerCase());
+  } catch {
+    return [];
+  }
+}

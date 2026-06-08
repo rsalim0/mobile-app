@@ -1,10 +1,12 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -15,8 +17,10 @@ import { AudioButton } from '@/components/word/audio-button';
 import { MeaningCard } from '@/components/word/meaning-card';
 import { StateView } from '@/components/state-view';
 import { Font, WW } from '@/constants/wordwise';
+import { useFavorites } from '@/context/favorites';
 import { useSearchHistory } from '@/context/search-history';
 import { lookupWord } from '@/services/dictionary';
+import { fetchSpellingSuggestions } from '@/services/suggestions';
 import {
   DictionaryEntry,
   LookupError,
@@ -103,14 +107,35 @@ function groupByPronunciation(entries: DictionaryEntry[]): PronGroup[] {
 
 /** Collect up to 12 distinct synonyms across all meanings/definitions. */
 function collectSynonyms(result: WordResult): string[] {
+  return collectField(result, 'synonyms');
+}
+
+/** Collect up to 12 distinct antonyms across all meanings/definitions. */
+function collectAntonyms(result: WordResult): string[] {
+  return collectField(result, 'antonyms');
+}
+
+function collectField(result: WordResult, field: 'synonyms' | 'antonyms'): string[] {
   const set = new Set<string>();
   for (const entry of result.entries) {
     for (const meaning of entry.meanings) {
-      meaning.synonyms?.forEach((s) => set.add(s));
-      meaning.definitions.forEach((d) => d.synonyms?.forEach((s) => set.add(s)));
+      meaning[field]?.forEach((s) => set.add(s));
+      meaning.definitions.forEach((d) => d[field]?.forEach((s) => set.add(s)));
     }
   }
   return [...set].slice(0, 12);
+}
+
+/** A copy/share-friendly summary of the word. */
+function buildShareText(result: WordResult): string {
+  const groups = groupByPronunciation(result.entries);
+  const phon = groups[0]?.phonetic;
+  const firstDef =
+    result.entries[0]?.meanings[0]?.definitions[0]?.definition;
+  const lines = [result.word + (phon ? `  ${phon}` : '')];
+  if (firstDef) lines.push(firstDef);
+  lines.push('— via WordWise');
+  return lines.join('\n\n');
 }
 
 export default function WordDetailsScreen() {
@@ -118,9 +143,11 @@ export default function WordDetailsScreen() {
   const term = decodeURIComponent(word ?? '');
   const { addWord } = useSearchHistory();
   const [status, setStatus] = useState<Status>({ kind: 'loading' });
+  const [didYouMean, setDidYouMean] = useState<string[]>([]);
 
   const fetchWord = useCallback(async () => {
     setStatus({ kind: 'loading' });
+    setDidYouMean([]);
     try {
       const result = await lookupWord(term);
       setStatus({ kind: 'success', result });
@@ -128,11 +155,16 @@ export default function WordDetailsScreen() {
       addWord(result.word || term);
     } catch (err) {
       const e = err as LookupError;
+      const kind = e.kind ?? 'api';
       setStatus({
         kind: 'error',
-        errorKind: e.kind ?? 'api',
+        errorKind: kind,
         message: e.message ?? 'Something went wrong. Please try again.',
       });
+      // "Did you mean?" — offer close spellings when a word isn't found.
+      if (kind === 'not_found') {
+        fetchSpellingSuggestions(term).then(setDidYouMean);
+      }
     }
   }, [term, addWord]);
 
@@ -148,16 +180,21 @@ export default function WordDetailsScreen() {
     else router.replace('/');
   }
 
+  const result = status.kind === 'success' ? status.result : null;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Header */}
-      <Pressable
-        accessibilityLabel="Go back"
-        hitSlop={12}
-        onPress={goBack}
-        style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={28} color={WW.text} />
-      </Pressable>
+      <View style={styles.header}>
+        <Pressable
+          accessibilityLabel="Go back"
+          hitSlop={12}
+          onPress={goBack}
+          style={({ pressed }) => [styles.iconBtn, pressed && styles.actionPressed]}>
+          <Ionicons name="chevron-back" size={28} color={WW.text} />
+        </Pressable>
+        {result ? <WordActions result={result} /> : null}
+      </View>
 
       {status.kind === 'loading' && <LoadingState term={term} />}
 
@@ -175,6 +212,23 @@ export default function WordDetailsScreen() {
           onPrimary={goBack}
           secondaryLabel="Browse popular words"
           onSecondary={() => router.replace('/')}
+          extra={
+            didYouMean.length > 0 ? (
+              <View style={styles.didYouMean}>
+                <Text style={styles.didYouMeanLabel}>Did you mean?</Text>
+                <View style={styles.didYouMeanChips}>
+                  {didYouMean.map((w) => (
+                    <Pressable
+                      key={w}
+                      onPress={() => router.replace(`/word/${encodeURIComponent(w)}` as never)}
+                      style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}>
+                      <Text style={styles.chipText}>{w}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : undefined
+          }
         />
       )}
 
@@ -201,8 +255,63 @@ export default function WordDetailsScreen() {
         />
       )}
 
-      {status.kind === 'success' && <SuccessState result={status.result} />}
+      {result ? <SuccessState result={result} /> : null}
     </SafeAreaView>
+  );
+}
+
+/** Bookmark / copy / share actions for the current word. */
+function WordActions({ result }: { result: WordResult }) {
+  const { isFavorite, toggle } = useFavorites();
+  const [copied, setCopied] = useState(false);
+  const fav = isFavorite(result.word);
+
+  async function onShare() {
+    try {
+      await Share.share({ message: buildShareText(result) });
+    } catch {
+      // user cancelled or platform has no share sheet — ignore
+    }
+  }
+
+  async function onCopy() {
+    await Clipboard.setStringAsync(buildShareText(result));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1300);
+  }
+
+  return (
+    <View style={styles.headerActions}>
+      <Pressable
+        accessibilityLabel={fav ? 'Remove bookmark' : 'Bookmark word'}
+        hitSlop={10}
+        onPress={() => toggle(result.word)}
+        style={({ pressed }) => pressed && styles.actionPressed}>
+        <Ionicons
+          name={fav ? 'bookmark' : 'bookmark-outline'}
+          size={24}
+          color={fav ? WW.primary : WW.text}
+        />
+      </Pressable>
+      <Pressable
+        accessibilityLabel="Copy definition"
+        hitSlop={10}
+        onPress={onCopy}
+        style={({ pressed }) => pressed && styles.actionPressed}>
+        <Ionicons
+          name={copied ? 'checkmark' : 'copy-outline'}
+          size={24}
+          color={copied ? WW.primary : WW.text}
+        />
+      </Pressable>
+      <Pressable
+        accessibilityLabel="Share word"
+        hitSlop={10}
+        onPress={onShare}
+        style={({ pressed }) => pressed && styles.actionPressed}>
+        <Ionicons name="share-social-outline" size={24} color={WW.text} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -232,9 +341,7 @@ function PronunciationRow({ audioUrls }: { audioUrls: string[] }) {
   );
 }
 
-/** One distinct pronunciation and all the meanings that share it. Heteronyms
- *  (same spelling, different sound/sense — e.g. "lead", "bass") render as
- *  separate groups; homonyms with the same sound are merged into one. */
+/** One distinct pronunciation and all the meanings that share it. */
 function PronGroupBlock({
   group,
   showRule,
@@ -248,7 +355,6 @@ function PronGroupBlock({
     <View style={[styles.entryBlock, showRule && styles.entryRule]}>
       <View style={styles.phoneticRow}>
         {phonetic ? <Text style={styles.phonetic}>{phonetic}</Text> : null}
-        {/* Activity 3 — a single pronunciation sits inline with the phonetic. */}
         {audioUrls.length === 1 ? <AudioButton url={audioUrls[0]} /> : null}
       </View>
 
@@ -261,8 +367,27 @@ function PronGroupBlock({
   );
 }
 
+/** A tappable label + chip list (synonyms / antonyms). */
+function ChipSection({ label, words }: { label: string; words: string[] }) {
+  if (words.length === 0) return null;
+  return (
+    <View style={styles.synonyms}>
+      <Text style={styles.synLabel}>{label}</Text>
+      <View style={styles.chips}>
+        {words.map((w) => (
+          <Pressable
+            key={w}
+            onPress={() => router.push(`/word/${encodeURIComponent(w)}` as never)}
+            style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}>
+            <Text style={styles.chipText}>{w}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function SuccessState({ result }: { result: WordResult }) {
-  const synonyms = collectSynonyms(result);
   const groups = groupByPronunciation(result.entries);
 
   return (
@@ -273,28 +398,25 @@ function SuccessState({ result }: { result: WordResult }) {
         <PronGroupBlock key={gi} group={group} showRule={gi > 0} />
       ))}
 
-      {synonyms.length > 0 && (
-        <View style={styles.synonyms}>
-          <Text style={styles.synLabel}>SYNONYMS</Text>
-          <View style={styles.chips}>
-            {synonyms.map((s) => (
-              <Pressable
-                key={s}
-                onPress={() => router.push(`/word/${encodeURIComponent(s)}` as never)}
-                style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}>
-                <Text style={styles.chipText}>{s}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      )}
+      <ChipSection label="SYNONYMS" words={collectSynonyms(result)} />
+      <ChipSection label="ANTONYMS" words={collectAntonyms(result)} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: WW.bg },
-  backBtn: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, alignSelf: 'flex-start' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  iconBtn: { padding: 4 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  actionPressed: { opacity: 0.5 },
 
   content: { paddingHorizontal: 24, paddingBottom: 48, gap: 16 },
   word: { fontSize: 56, fontFamily: Font.display, color: WW.text, marginTop: 4 },
@@ -352,4 +474,13 @@ const styles = StyleSheet.create({
 
   ctx: { fontSize: 16, fontFamily: Font.regular, color: WW.textSecondary },
   ctxBold: { color: WW.text, fontFamily: Font.bold },
+
+  didYouMean: { alignItems: 'center', gap: 12, marginTop: 8 },
+  didYouMeanLabel: { fontSize: 15, fontFamily: Font.semibold, color: WW.textSecondary },
+  didYouMeanChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+  },
 });

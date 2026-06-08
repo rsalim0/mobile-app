@@ -11,6 +11,7 @@ import type { DrawerContentComponentProps } from 'expo-router/build/react-naviga
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { DrawerContent } from '@/components/drawer-content';
+import { FavoritesProvider } from '@/context/favorites';
 import { SearchHistoryProvider } from '@/context/search-history';
 import { WW } from '@/constants/wordwise';
 
@@ -30,19 +31,21 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SearchHistoryProvider>
-        <Drawer
-          drawerContent={(props: DrawerContentComponentProps) => (
-            <DrawerContent {...props} />
-          )}
-          screenOptions={{
-            headerShown: false,
-            drawerType: 'front',
-            drawerStyle: { width: 320, backgroundColor: WW.bg },
-            sceneStyle: { backgroundColor: WW.bg },
-          }}>
-          <Drawer.Screen name="index" />
-          <Drawer.Screen name="word/[word]" />
-        </Drawer>
+        <FavoritesProvider>
+          <Drawer
+            drawerContent={(props: DrawerContentComponentProps) => (
+              <DrawerContent {...props} />
+            )}
+            screenOptions={{
+              headerShown: false,
+              drawerType: 'front',
+              drawerStyle: { width: 320, backgroundColor: WW.bg },
+              sceneStyle: { backgroundColor: WW.bg },
+            }}>
+            <Drawer.Screen name="index" />
+            <Drawer.Screen name="word/[word]" />
+          </Drawer>
+        </FavoritesProvider>
       </SearchHistoryProvider>
     </GestureHandlerRootView>
   );

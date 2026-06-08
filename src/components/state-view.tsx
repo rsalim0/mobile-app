@@ -15,6 +15,8 @@ interface StateViewProps {
   onSecondary?: () => void;
   /** Optional footnote under the primary button. */
   footnote?: string;
+  /** Optional extra content under the message (e.g. "Did you mean?" chips). */
+  extra?: React.ReactNode;
 }
 
 /**
@@ -31,6 +33,7 @@ export function StateView({
   secondaryLabel,
   onSecondary,
   footnote,
+  extra,
 }: StateViewProps) {
   return (
     <View style={styles.root}>
@@ -39,6 +42,7 @@ export function StateView({
         <View style={styles.iconBadge}>{icon}</View>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.message}>{message}</Text>
+        {extra}
       </View>
 
       <View style={styles.footer}>
