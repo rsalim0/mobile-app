@@ -1,56 +1,134 @@
-# Welcome to your Expo app 👋
+# 📖 WordWise — Dictionary Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A clean, cross-platform (Android · iOS · Web) English dictionary app built for
+**Lexitech Solutions Ltd**. Search any word and get its pronunciation,
+phonetics, parts of speech, definitions, examples, synonyms and antonyms — in a
+cozy book-novel theme.
 
-## Get started
+Built with **Expo SDK 56**, **Expo Router**, **TypeScript**, and **Axios**.
+Data comes from the free [Dictionary API](https://dictionaryapi.dev), with
+[Datamuse](https://www.datamuse.com/api/) powering autocomplete and spelling
+suggestions. Screen designs were created with [Daisy](https://www.daisy.now)
+(mockups in [`designs/`](./designs)).
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## ✨ Features
 
-2. Start the app
+- **Word search** with input validation and a loading state.
+- **Realtime autocomplete** under the search bar (debounced, request-cancelling).
+- **Word details** — word, phonetics, parts of speech, numbered definitions,
+  example sentences, synonyms and antonyms.
+- **Pronunciation audio** with full play / pause / resume / stop handling, plus
+  separate UK/US/AU regional variants (e.g. `route` → /ɹuːt/ vs /ɹaʊt/).
+- **Text-to-speech fallback** for words the API has no audio for (e.g. `insane`).
+- **Heteronyms** (`lead`, `bass`) shown as separate pronunciation blocks;
+  homonyms with the same sound are merged so pronunciations never duplicate.
+- **Drawer navigation** with persistent **search history** and **saved words**.
+- **Favorites / bookmarks**, **share** and **copy** a word + definition.
+- **"Did you mean?"** spelling suggestions on the not-found screen.
+- **"Surprise me"** random word and a rotating daily **Word of the Day**.
+- **Robust error handling** — empty/sentence/number/symbol validation,
+  timeout / offline / 404 / 429 / 5xx mapping, and an app-wide crash boundary.
+- **Book-novel theme** — parchment palette, Lora body serif, Instrument Serif
+  display headings, vector icons.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 🚀 Getting started
 
 ```bash
-npm run reset-project
+# 1. Install dependencies
+npm install
+
+# 2. Start the dev server
+npx expo start        # then press a (Android), i (iOS), or w (web)
+
+# Or target a platform directly
+npm run android
+npm run ios
+npm run web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+> Requires Node 18+ and the Expo toolchain. See the
+> [Expo SDK 56 docs](https://docs.expo.dev/versions/v56.0.0/).
 
-### Other setup steps
+---
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## 🔌 API endpoints
 
-## Learn more
+| Purpose | Method | URL |
+|---|---|---|
+| Look up a word | `GET` | `https://api.dictionaryapi.dev/api/v2/entries/en/{word}` |
+| Pronunciation audio | `GET` | `phonetics[].audio` (absolute `.mp3` from the response) |
+| Autocomplete | `GET` | `https://api.datamuse.com/sug?s={prefix}` |
+| "Did you mean?" | `GET` | `https://api.datamuse.com/words?sp={word}` |
 
-To learn more about developing your project with Expo, look at the following resources:
+A 404 from the dictionary API means the word was not found.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## 🏗️ Architecture
 
-Join our community of developers creating universal apps.
+A layered design keeps screens thin and all data work in a service + state layer.
+See [`DESIGN.md`](./DESIGN.md) for the full Data Flow Diagram and architecture.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+Presentation (Expo Router screens + components)
+        │
+State (React Context: search history, favorites — persisted)
+        │
+Service (Axios dictionary client, Datamuse suggestions, storage)
+        │
+External APIs (Dictionary API, Datamuse)
+```
+
+### Project structure
+
+```
+src/
+  app/
+    _layout.tsx          # Drawer + providers + fonts + error boundary
+    index.tsx            # Search screen (autocomplete, surprise, WOTD)
+    word/[word].tsx      # Word details + loading/not-found/error states
+  components/
+    drawer-content.tsx   # History + saved words
+    suggestion-list.tsx  # Autocomplete dropdown
+    state-view.tsx       # Shared empty/error layout
+    error-boundary.tsx   # App-wide crash fallback
+    word/                # audio-button, speak-button, meaning-card
+  context/
+    search-history.tsx   # Persisted history
+    favorites.tsx        # Persisted bookmarks
+  services/
+    dictionary.ts        # Axios client + typed error mapping
+    suggestions.ts       # Datamuse autocomplete + spelling
+    storage.ts           # AsyncStorage JSON helper
+  constants/wordwise.ts  # Theme tokens (colors + fonts) + word pools
+  utils/                 # validate-word, word-picks
+  types/dictionary.ts    # API + app types
+```
+
+---
+
+## ✅ Activity coverage
+
+| Activity | Where |
+|---|---|
+| 1 · Search & API integration | `app/index.tsx` + `services/dictionary.ts` |
+| 2 · Display word details | `app/word/[word].tsx` + `components/word/*` |
+| 3 · Audio pronunciation | `components/word/audio-button.tsx`, `speak-button.tsx` |
+| 4 · Drawer navigation & history | `app/_layout.tsx`, `context/*`, `components/drawer-content.tsx` |
+| 5 · Error handling & feedback | `services/dictionary.ts`, `utils/validate-word.ts`, `components/state-view.tsx` |
+
+---
+
+## 🧰 Tech stack
+
+Expo SDK 56 · React Native 0.85 · Expo Router · TypeScript · Axios ·
+expo-audio · expo-speech · AsyncStorage · @expo/vector-icons ·
+Lora + Instrument Serif (Google Fonts).
+
+## 📝 License
+
+See [`LICENSE`](./LICENSE).
